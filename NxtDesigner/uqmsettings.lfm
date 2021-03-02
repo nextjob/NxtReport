@@ -1,0 +1,91 @@
+object FrmQmSettings: TFrmQmSettings
+  Left = 2284
+  Height = 283
+  Top = 245
+  Width = 320
+  Caption = 'QM Connection Settings'
+  ClientHeight = 283
+  ClientWidth = 320
+  OnActivate = FormActivate
+  OnCreate = FormCreate
+  LCLVersion = '2.0.10.0'
+  object EdtUserName: TEdit
+    Left = 96
+    Height = 23
+    Top = 24
+    Width = 117
+    TabOrder = 0
+  end
+  object Label1: TLabel
+    Left = 24
+    Height = 15
+    Top = 24
+    Width = 58
+    Caption = 'User Name'
+    ParentColor = False
+  end
+  object EdtPasswrd: TEdit
+    Left = 96
+    Height = 23
+    Top = 56
+    Width = 117
+    EchoMode = emPassword
+    PasswordChar = '*'
+    TabOrder = 1
+  end
+  object Label2: TLabel
+    Left = 24
+    Height = 15
+    Top = 56
+    Width = 50
+    Caption = 'Password'
+    ParentColor = False
+  end
+  object EdtAccount: TEdit
+    Left = 96
+    Height = 23
+    Top = 88
+    Width = 117
+    TabOrder = 2
+  end
+  object Label3: TLabel
+    Left = 24
+    Height = 15
+    Top = 88
+    Width = 45
+    Caption = 'Account'
+    ParentColor = False
+  end
+  object BtnConnect: TButton
+    Left = 56
+    Height = 25
+    Top = 128
+    Width = 75
+    Caption = 'Connect'
+    OnClick = BtnConnectClick
+    TabOrder = 3
+  end
+  object BtnDisconnect: TButton
+    Left = 168
+    Height = 25
+    Top = 128
+    Width = 75
+    Caption = 'Disconnect'
+    OnClick = BtnDisconnectClick
+    TabOrder = 4
+  end
+  object MemoStat: TMemo
+    Left = 16
+    Height = 106
+    Top = 168
+    Width = 286
+    Lines.Strings = (
+      'Rem: If Security is enabled on QM,'
+      ' and user not defined in Secuirty subsytem'
+      ' connect will fail!'
+      'See QM ref manual'
+    )
+    ScrollBars = ssAutoBoth
+    TabOrder = 5
+  end
+end

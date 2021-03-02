@@ -1,0 +1,261 @@
+*
+* PROGRAM CREATES QMFILES.JSON FILE FOR NxtDesigner
+*
+*
+*
+$INCLUDE GUIBP ATGUIEQUATES
+$INCLUDE SYSCOM KEYS.H
+$INCLUDE NXT.INCLUDES NXT.EQUATES
+$INCLUDE NXT.INCLUDES SYSTEM_FILE.EQU
+*
+*
+EQU DICT.CMP.SZ TO 10
+*
+* HARD CODED LOCATION FOR PROCESS (NEED TO CHANGE TO USER INPUT / SELECTED FIELD?)
+*
+SOURCE_DATA_PATH ="C:\QMACCOUNTS\NEXTJOB\"
+*
+* THIS IS THE PATH TO WHERE WE SAVE DATA FROM THE BUILD PROCESS AND THE FILE NAME WE WILL USE
+TEMPLATE_DATA_PATH = "C:\QMACCOUNTS\nxtReportDefs"
+DB_TEMPLATE_FILE = "QMFILES.JSON"
+
+*
+*
+*
+CRT @(-1):
+
+CRT
+CRT '++++++++++++++++++++++++++++++++++++++++++++++++++++'
+CRT ' PROGRAM CREATES QM FILES JSON DATA AND             '
+CRT ' SAVES IN DIRECTORY ':TEMPLATE_DATA_PATH
+CRT ' FILE NAME ':DB_TEMPLATE_FILE
+CRT '++++++++++++++++++++++++++++++++++++++++++++++++++++'
+CRT
+*
+CRT 'Enter OK To Continue':
+INPUT OK
+IF OK # 'OK' THEN STOP 'Process Aborted'
+*
+ERRORS = ''    ;* LIST OF ERRORS FOUND DURING UPGRADE
+DISPLAY.ALL = @FALSE  ;* DISPLAY RESULTS FOR ALL TEST (@TRUE) OR ONLY ERRORS (@FALSE)
+*
+* FILES LIST
+* LIST OF APPLICATION FILES WE WANT TO INCLUDE IN QMFILES.JSON
+* NEED TO FIGURE OUT HOW TO GET THIS LIST VIA A SELECT.
+* USING THE VOC FILE RESULTS IN TOO MANY ITEMS WE DO NOT WANT TO INCLUDE
+*SORT  DEFAULT VOC WITH TYPE = "F" AND WITH FTYPE LIKE DH0X  AND WITH IS.REMOTE = ''  FNAME COL.HDG "File name............" TYPE FTYPE id.sup
+*
+*SSELECT  DEFAULT VOC WITH TYPE = "F" AND WITH FTYPE LIKE DH0X  AND WITH IS.REMOTE = ''
+FILES_LIST = ''
+*
+*FILES_LIST<-1> = "SYS_LOG"
+*FILES_LIST<-1> = "ORDER_PARENT"
+*FILES_LIST<-1> = "ORDER_CHILD"
+*FILES_LIST<-1> = "CUSTOMERS"
+*FILES_LIST<-1> = "SHIP_TO"
+*FILES_LIST<-1> = "PARTS"
+*FILES_LIST<-1> = "RECEIPTS"
+*FILES_LIST<-1> = "LOT_TRACE"
+*FILES_LIST<-1> = "SALES"
+*FILES_LIST<-1> = "AR"
+*FILES_LIST<-1> = "PROCESS_STEPS"
+*FILES_LIST<-1> = "PROCESS_GROUPS"
+*FILES_LIST<-1> = "CERTS"
+*FILES_LIST<-1> = "AR_CHECKS"
+*FILES_LIST<-1> = "VALIDATION_FILE"
+*FILES_LIST<-1> = "SYSTEM_FILE"
+*FILES_LIST<-1> = "PARTS_QTY"
+*FILES_LIST<-1> = "VENDORS"
+*FILES_LIST<-1> = "VSHIP_TO"
+*FILES_LIST<-1> = "WC"
+*FILES_LIST<-1> = "RT"
+*FILES_LIST<-1> = "WO"
+*FILES_LIST<-1> = "WR"
+*FILES_LIST<-1> = "OPERATIONS"
+*FILES_LIST<-1> = "RTREV"
+*FILES_LIST<-1> = "EMPLOYEES"
+*FILES_LIST<-1> = "LABOR_TICKETS"
+*FILES_LIST<-1> = "LABOR_TRANS"
+*FILES_LIST<-1> = "PO_PARENT"
+*FILES_LIST<-1> = "PO_CHILD"
+*FILES_LIST<-1> = "PARTS_BOM"
+*FILES_LIST<-1> = "AP_CHECKS"
+*FILES_LIST<-1> = "AP_INVOICE"
+*FILES_LIST<-1> = "GLT"
+*FILES_LIST<-1> = "QA_MASTER"
+*FILES_LIST<-1> = "QAD_PARENT"
+*FILES_LIST<-1> = "QAD_CHILD"
+*FILES_LIST<-1> = "WC_LOAD"
+*
+*FILE_CT = DCOUNT(FILES_LIST,@AM)
+*
+
+CRT "GENERATE QMFILES.JSON AND SAVE IN ":TEMPLATE_DATA_PATH:' <Y/N>':
+INPUT OK
+IF OK = 'Y' THEN
+   *
+   * GET THE FILES LIST
+   *
+   SLIST = "SSELECT  DEFAULT VOC WITH TYPE = 'F' AND WITH FTYPE LIKE DH0X  AND WITH IS.REMOTE = ''  TO 2"
+   EXECUTE SLIST CAPTURING DMMY.OUT
+   BEGIN CASE
+         *
+      CASE @SELECTED LT 1
+         CRT 'NO FILES FOUND?!'
+         CRT 'PROCESS ABORTED'
+         STOP
+         *
+      CASE 1
+         READLIST FILES_LIST FROM 2 THEN
+            FILE_CT = DCOUNT(FILES_LIST,@AM)
+         END
+
+   END CASE
+   *
+   *
+   TEMPLATE_FILE =  TEMPLATE_DATA_PATH:@DS:DB_TEMPLATE_FILE
+   OPN.ERROR = ''
+   OPENSEQ TEMPLATE_FILE OVERWRITE TO TEMPLATE.FILEVAR THEN
+      NULL
+   END ELSE
+      CREATE TEMPLATE.FILEVAR THEN NULL ELSE OPN.ERROR = TEMPLATE_FILE
+   END
+   IF OPN.ERROR # '' THEN
+      CRT 'ERROR CREATING FILE: ':TEMPLATE_FILE
+      CRT 'PROCESS ABORTED'
+      STOP
+   END
+   *
+   CRT 'Building Files Template and saving to ':TEMPLATE_FILE
+   *
+   WRITESEQ '{"Files" : [' TO TEMPLATE.FILEVAR ELSE
+      CRT 'ERROR WRITING TO ':TEMPLATE_FILE
+      CRT 'PROCESS ABORTED'
+      STOP
+   END
+   *
+   * For each file defined in Files_List, create the JSON entry
+   *
+   OUTTXT = ''   ;* INIT
+   CLOSEBRACKETWRITTEN = @TRUE
+   CRT FILE_CT :' FILES TO PROCESS'
+   FOR I = 1 TO FILE_CT
+      IF FILES_LIST<I> # 'VOC' THEN       ;* SKIP VOC FILE
+
+         CRT 'CREATING ENTRIES FOR: ':FILES_LIST<I>
+
+         OPEN "DICT", FILES_LIST<I> TO DICT.FILE.VAR THEN
+            *
+            * NOW GET THE ACTUAL DICTIONARY ITEMS FOR THE FILE
+            *
+            SLIST = "SELECT DICT ":FILES_LIST<I>:' BY @ID  TO 2'
+            EXECUTE SLIST CAPTURING DMMY.OUT
+            *
+            BEGIN CASE
+                  *
+               CASE @SELECTED LT 1
+                  CRT 'No Data Found for ':FILES_LIST<I>
+                  *
+               CASE 1
+                  *
+                  *     CREATE THE LIST OF ITEM IDS
+                  *
+                  *
+                  IF NOT(CLOSEBRACKETWRITTEN) THEN
+                     WRITESEQ '},' TO TEMPLATE.FILEVAR ELSE NULL
+                     CLOSEBRACKETWRITTEN = @TRUE
+                  END
+                  WRITESEQ '{"Filename" : "':FILES_LIST<I>:'",' TO TEMPLATE.FILEVAR ELSE NULL
+                  WRITESEQ '"Dictionary": [' TO TEMPLATE.FILEVAR ELSE NULL
+                  CLOSEBRACKETWRITTEN = @FALSE
+
+                  READLIST DICT_IDS FROM 2 THEN
+                     LIST.CT = DCOUNT(DICT_IDS,@AM)
+                     FOR X = 1 TO LIST.CT
+                        READ.ID = DICT_IDS<X>
+                        IF DISPLAY.ALL THEN CRT 'Reading Dict: ': FILES_LIST<I> :' ':READ.ID
+
+                        READ DIC.ITEM FROM DICT.FILE.VAR, READ.ID  THEN
+                           If DIC.ITEM<1> = 'D' OR DIC.ITEM<1> = 'I' THEN
+
+                              DICT.SZ = DCOUNT(DIC.ITEM,@AM)
+                              DICTDC = COLLECTION()  ;* CREATE MY COLLECTION VAR
+                              DICTDC{'Dictname'} = READ.ID
+                              *
+                              * WE LIMIT THE DATA WE SAVE TO THE NON QM INTERNAL USE DATA (DICT.CMP.SZ)
+                              IF DICT.SZ > DICT.CMP.SZ THEN DICT.SZ = DICT.CMP.SZ
+                              FOR D =  1 TO DICT.SZ
+                                 FLD = 'FLD':D
+                                 DICTDC{D} = DIC.ITEM<D>
+                              NEXT D
+                              OUTTXT = JBUILD(DICTDC)
+                              IF STATUS() # 0 THEN
+                                 CRT 'ERROR JBUILD FAILED ON  ':FILES_LIST<I>:' ':READ.ID
+                                 CRT 'PROCESS ABORTED'
+                                 STOP
+                              END
+
+
+                              IF X < LIST.CT THEN   ;* NO ',' ON LAST DICTIONARY ITEM
+                                 WRITESEQ OUTTXT:',' TO TEMPLATE.FILEVAR ELSE NULL
+                              END ELSE
+                                 WRITESEQ OUTTXT TO TEMPLATE.FILEVAR ELSE NULL
+                              END
+                           END
+                        END
+                     NEXT X
+                     WRITESEQ ']' TO TEMPLATE.FILEVAR ELSE NULL
+                  END
+
+                  *
+            END CASE
+            CLOSE DICT.FILE.VAR
+         END ELSE
+            ERR.LN =  'Could Not Open Dict for: ':FILES_LIST<I>
+            CRT ERR.LN
+            ERRORS<-1> = ERR.LN
+         END
+
+      END
+   NEXT I
+   IF NOT(CLOSEBRACKETWRITTEN) THEN
+      WRITESEQ '}' TO TEMPLATE.FILEVAR ELSE NULL
+      CLOSEBRACKETWRITTEN = @TRUE
+   END
+
+   WRITESEQ ']}' TO TEMPLATE.FILEVAR ELSE
+      CRT 'ERROR WRITING TO ':TEMPLATE_FILE
+      CRT 'PROCESS ABORTED'
+      STOP
+   END
+
+   CLOSESEQ TEMPLATE.FILEVAR
+
+END
+
+
+*
+* WRAP IT UP
+*
+ERROR.CT = DCOUNT(ERRORS,@AM)
+IF ERROR.CT > 0 THEN
+ERR.00: *
+   CRT 'ERRORS FOUND DURING UPGRADE, DISPLAY THEM <Y/N>':
+   INPUT DSP.ERRORS
+   BEGIN CASE
+      CASE DSP.ERRORS = 'Y'
+         FOR I = 1 TO ERROR.CT
+            CRT ERRORS<I>
+         NEXT I
+      CASE DSP.ERRORS = 'N'
+         NULL
+      CASE 1
+         CRT 'INVALID RESPONSE, RETRY'
+         GOTO ERR.00
+   END CASE
+   *
+END
+
+CRT 'Creation Process Complete'
+
+END

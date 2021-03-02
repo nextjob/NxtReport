@@ -1,0 +1,64 @@
+object FrmDictSelect: TFrmDictSelect
+  Left = 3023
+  Height = 240
+  Top = 571
+  Width = 367
+  Caption = 'FrmDictSelect'
+  ClientHeight = 240
+  ClientWidth = 367
+  OnShow = FormShow
+  LCLVersion = '2.0.10.0'
+  object LBFiles: TListBox
+    Left = 8
+    Height = 48
+    Top = 24
+    Width = 224
+    ItemHeight = 0
+    OnClick = LBFilesClick
+    TabOrder = 0
+  end
+  object ListView1: TListView
+    Left = 8
+    Height = 120
+    Top = 96
+    Width = 328
+    AutoWidthLastColumn = True
+    Columns = <    
+      item
+        Caption = 'Dictionary Name'
+        MinWidth = 10
+        Width = 10
+      end    
+      item
+        Caption = 'Description'
+        Width = 314
+      end>
+    ColumnClick = False
+    GridLines = True
+    Items.LazData = {
+      5400000002000000FFFFFFFFFFFFFFFFFFFFFFFF01000000050000004974656D
+      30050000004974656D31FFFFFFFFFFFFFFFFFFFFFFFF01000000050000004974
+      656D32050000004974656D33FFFFFFFFFFFFFFFF
+    }
+    ReadOnly = True
+    RowSelect = True
+    TabOrder = 1
+    ViewStyle = vsReport
+  end
+  object Label1: TLabel
+    Left = 16
+    Height = 15
+    Top = 8
+    Width = 62
+    Caption = 'QM File List'
+    ParentColor = False
+  end
+  object Label2: TLabel
+    Left = 16
+    Height = 15
+    Top = 80
+    Width = 80
+    Caption = 'Directory Items'
+    ParentColor = False
+  end
+end

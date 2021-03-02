@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <PathDelim Value="\"/>
+    <Version Value="11"/>
+    <BuildModes Active="Default"/>
+    <Units Count="2">
+      <Unit0>
+        <Filename Value="NxtRunCommand.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
+        <CursorPos X="52" Y="19"/>
+        <UsageCount Value="25"/>
+        <Loaded Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="C:\lazarus\fpc\3.2.0\source\packages\fcl-process\src\processbody.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="107"/>
+        <CursorPos X="10" Y="181"/>
+        <UsageCount Value="10"/>
+      </Unit1>
+    </Units>
+    <JumpHistory Count="12" HistoryIndex="11">
+      <Position1>
+        <Filename Value="NxtRunCommand.lpr"/>
+        <Caret Line="34" Column="13" TopLine="7"/>
+      </Position1>
+      <Position2>
+        <Filename Value="NxtRunCommand.lpr"/>
+        <Caret Line="28" Column="5" TopLine="5"/>
+      </Position2>
+      <Position3>
+        <Filename Value="NxtRunCommand.lpr"/>
+        <Caret Line="16" Column="77" TopLine="5"/>
+      </Position3>
+      <Position4>
+        <Filename Value="NxtRunCommand.lpr"/>
+        <Caret Line="37" Column="13" TopLine="7"/>
+      </Position4>
+      <Position5>
+        <Filename Value="NxtRunCommand.lpr"/>
+        <Caret Line="33" Column="27" TopLine="7"/>
+      </Position5>
+      <Position6>
+        <Filename Value="NxtRunCommand.lpr"/>
+        <Caret Line="13"/>
+      </Position6>
+      <Position7>
+        <Filename Value="NxtRunCommand.lpr"/>
+        <Caret Line="50" Column="12" TopLine="16"/>
+      </Position7>
+      <Position8>
+        <Filename Value="NxtRunCommand.lpr"/>
+        <Caret Line="41" Column="51" TopLine="14"/>
+      </Position8>
+      <Position9>
+        <Filename Value="NxtRunCommand.lpr"/>
+        <Caret Line="48" Column="7" TopLine="18"/>
+      </Position9>
+      <Position10>
+        <Filename Value="NxtRunCommand.lpr"/>
+        <Caret Line="31" Column="77" TopLine="4"/>
+      </Position10>
+      <Position11>
+        <Filename Value="NxtRunCommand.lpr"/>
+        <Caret Line="33" Column="86" TopLine="5"/>
+      </Position11>
+      <Position12>
+        <Filename Value="NxtRunCommand.lpr"/>
+        <Caret Line="37" Column="56" TopLine="5"/>
+      </Position12>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes Count="1" ActiveMode="default">
+        <Mode0 Name="default">
+          <local>
+            <CommandLineParams Value="C:\Laz_projects\NxtReport\NxtDesigner\NxtReportGen.exe -f C:\QMACCOUNTS\nxtReportDefs\MyTestReport.xml -s XLSX -d"/>
+          </local>
+        </Mode0>
+      </Modes>
+    </RunParams>
+  </ProjectSession>
+  <Debugging>
+    <Watches Count="3">
+      <Item1>
+        <Expression Value="executable"/>
+      </Item1>
+      <Item2>
+        <Expression Value="arguments"/>
+      </Item2>
+      <Item3>
+        <Expression Value="workingdir"/>
+      </Item3>
+    </Watches>
+  </Debugging>
+</CONFIG>

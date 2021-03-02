@@ -1,0 +1,988 @@
+SUBROUTINE NXTREPORT(DEF_FILE_PATH, DEF_FILE_NAME, REPORT_FILE_PATH, REPORT_FILE_NAME, REPLACE_STRING, OPTIONS, MY_STATUS)
+**************************************************************************
+**
+*This is free and unencumbered software released into the public domain.
+*
+*Anyone is free to copy, modify, publish, use, compile, sell, or
+*distribute this software, either in source code form or as a compiled
+*binary, for any purpose, commercial or non-commercial, and by any
+*means.
+*
+*In jurisdictions that recognize copyright laws, the author or authors
+*of this software dedicate any and all copyright interest in the
+*software to the public domain. We make this dedication for the benefit
+*of the public at large and to the detriment of our heirs and
+*successors. We intend this dedication to be an overt act of
+*relinquishment in perpetuity of all present and future rights to this
+*software under copyright law.
+*
+*THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+*EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+*MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+*IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+*OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+*ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+*OTHER DEALINGS IN THE SOFTWARE.
+*
+*For more information, please refer to <http://unlicense.org/>
+*
+**************************************************************************
+*
+* MODULE: NXTREPORT
+* AUTHOR: MAB
+* VERSION: 1.0.0
+* CREATED: 03/01/2021
+* UPDATED:
+*
+* MAINTENANCE RECORD:
+*
+* EQUATE:
+*
+* VARIABLES:
+* Def_File_Path & Name    - File Path and Name of report definition record
+* Report_File_Path & Name - File Path and Name of  report .JSON file to produce (file created by this routine)
+* Replace_String      -  String of Valid JSON Name / Value pairs which will be used to replace the Name value found in the report with the associated value.
+*                         - ie) {"%CustName%" : "Joe Blow's Hardware", "%CustAddrStreet1% : "101 Avenue" , "%CustAddrStreet2% : "Suite 10". "%City%" : "Plainville"} and so on
+*                           Where %CustName% is found in the report definition, "Joe Blow's Hardware is output.
+*                           This feature needs some design thought, intent is to allow NxtReport to generate "forms"  ie invoices, packslips .....
+* Options<1>       - spreadsheet type, choice of: xlsx - Excel XML spreadsheet
+*                                                 xls  - Excel 97-2003 spreadsheets
+*                                                 ods  - LibreOffice/OpenOffice spreadsheet
+* Options<2>       - Debug - run NxtReportGen in debug mode
+*
+* Options<3>       - GenDebug   - Log JSON parsing in NxtReportGen
+*
+* Options<4>       - timeout - timer for NxtReportGen number of (seconds * 1000) for report generation to complete
+*
+* Status           - Returned Status (0) - ok, Report .xml file created (Non Zero - Error)
+*
+*
+*
+* FILES:
+* See Above &
+* ERRLOG in QMSYS account written via LOGMSG command
+*
+*
+* DESIGN DESCRIPTION:
+* QM BASIC SUBROUTINE, PRODUCES REPORT xml /.json FILE (WHICH WILL BE CONSUMED BY NxtReportGen (Win32 executable)).
+*
+*******************************************************************************************************************************************
+* ADD THE INCLUDES
+*
+$INCLUDE SYSCOM KEYS.H
+*
+* LOCAL SUBROUTINES
+*
+**********************************************************************************************************************
+*
+*  setup defines
+*
+* EDB - extra dedugging
+* USEJSON - create the Report Data file as a JSON file (if not defined we create an XML file)
+*         - note: NXTREPORTGEN does not currently support the JSON VERSION!
+*
+* EXTRA DEBUGGING
+*$DEFINE EDB
+*--
+* Use JSON format
+* $DEFINE USEJSON
+*--
+* USECVS - USE QM INTERNAL QUERY PROCESSOR WRITTING OUTPUT TO CSV FILE, READ THIS FILE AND CREATE SS XML/JSON REPORT DATA FILE
+* OTHERWISE WE USE THE QUERY PROCESSOR TO CREATE A SELECT LIST OF IDS, AND PROCESS EACH RECORD.  THIS HAS ALL SORTS OF SHORTCOMINGS
+$DEFINE USECVS
+************************************************************************************************************************
+*
+*$IFDEF EDB
+LOGMSG "NxtReport: Called: ":DEF_FILE_PATH:" ":DEF_FILE_NAME:" ":REPORT_FILE_PATH:" ":REPORT_FILE_NAME:" ":REPLACE_STRING:" op1: ":OPTIONS<1>:" op2: ":OPTIONS<2>:" op3: ":OPTIONS<3>:" op4: ":OPTIONS<4>:' ':MY_STATUS
+*$ENDIF
+*
+*
+* create the data collection from the JSON string passed?
+*
+CLIENT.DATA = COLLECTION()
+IF REPLACE_STRING # '' THEN
+   CLIENT.DATA = JPARSE(REPLACE_STRING)
+   IF STATUS() # 0 THEN
+      LOGMSG "NxtReport: Failed JSON parse at character postion: " : INMAT()
+   END
+END
+*
+* add in always available replacement strings
+CLIENT.DATA{'%%RUNDATE%%'} = OCONV(DATE(), 'D/')
+CLIENT.DATA{'%%RUNTIME%%'} = OCONV(TIME(), 'MTH')
+*
+* SET INITIAL STATUS VALUE TO OK (0)
+MY_STATUS = 0  ;*
+HOLD_FILE_NAME = ''  ;* INIT THE HOLD FILE NAME TO EMPTY (FOR CSV FILE REPORT GEN)
+
+*
+*Open Def_File_Name Else
+*Err_Cd Def file not found
+*Exit
+*
+OPENPATH DEF_FILE_PATH TO DEF_FILE_VAR THEN
+   NULL
+END ELSE
+   MY_STATUS = 1
+   CALL !ERRTEXT(TEXT, STATUS())
+   LOGMSG "NxtReport: Failed to Open Report Def Path: " : DEF_FILE_PATH : " - ":TEXT
+   GOTO MAIN.999
+END
+*
+*Read Def_File Else (.dat file)
+*Err_Cd Read Error on Format_File_Name
+*Exit
+*
+$IFDEF EDB
+LOGMSG "NxtReport: DEF_FILE_NAME .dat: ":DEF_FILE_NAME
+$ENDIF
+
+READ DEF_FILE_REC FROM DEF_FILE_VAR, DEF_FILE_NAME THEN
+   NULL
+END ELSE
+   MY_STATUS = 1
+   CALL !ERRTEXT(TEXT, STATUS())
+   LOGMSG "NxtReport: Failed to Read Report Def File: " : DEF_FILE_NAME : " - ":TEXT
+   GOTO MAIN.999
+END
+
+*
+*Parse Record 1 of Def_file Retriving
+*Format_File_Name
+*QM Account Name
+*Location of NxtReportGen executable
+DPARSE.CSV DEF_FILE_REC<1>, ",", FORMAT_FILE_NAME, QM_ACCOUNT_NAME, NXTREPORTGENPATH
+*
+*
+*Test Format_File_Name Exists Else
+*Err_Cd Format file not found
+*Exit
+*
+IF OSPATH(FORMAT_FILE_NAME,OS$EXISTS) THEN
+   NULL
+END ELSE
+   MY_STATUS = 1
+   LOGMSG "NxtReport: Format File Name: " : FORMAT_FILE_NAME : " Does Not Exist"
+   GOTO MAIN.999
+END
+*
+* are we in the correct account
+*
+IF @WHO = TRIM(QM_ACCOUNT_NAME) THEN
+   NULL
+END ELSE
+   MY_STATUS = 1
+   LOGMSG "NxtReport: Specified Account Name: " : QM_ACCOUNT_NAME : " Does Not Match Account Executing NxtReport"
+   GOTO MAIN.999
+END
+*
+* TEST FOR NXTREPORTGEN
+*
+NXTREPORTGEN = NXTREPORTGENPATH : @DS :'NXTREPORTGEN.EXE'
+IF OSPATH(NXTREPORTGEN,OS$EXISTS) THEN
+   NULL
+END ELSE
+   MY_STATUS = 1
+   LOGMSG "NxtReport: NxtReportGen Not Found at: " : NXTREPORTGEN
+   GOTO MAIN.999
+END
+*
+* TEST FOR NXTRUNCOMMAND
+*
+NXTRUNCOMMAND = NXTREPORTGENPATH : @DS :'NXTRUNCOMMAND.EXE'
+IF OSPATH(NXTRUNCOMMAND,OS$EXISTS) THEN
+   NULL
+END ELSE
+   MY_STATUS = 1
+   LOGMSG "NxtReport: NxtRunCOmmand Not Found at: " : NXTRUNCOMMAND
+   GOTO MAIN.999
+END
+*
+* WHAT TYPE OF SS FILE DOES USER WANT
+*
+SS_TYPE = OCONV(OPTIONS<1>,'MCL')
+BEGIN CASE
+   CASE SS_TYPE = 'xlsx'
+      NULL
+   CASE SS_TYPE = 'xls'
+      NULL
+   CASE SS_TYPE = 'ods'
+      NULL
+   CASE 1
+      SS_TYPE = 'ods'
+$IFDEF EDB
+      LOGMSG "NxtReport: Unknown Spreadsheet Type: ":SS_TYPE:' Defaulted to ods'
+$ENDIF
+END CASE
+*
+
+*If Report_File_Path Exists then
+*  null
+*else
+*  create the path
+*end
+*
+IF OSPATH(REPORT_FILE_PATH,OS$EXISTS) THEN
+   NULL
+END ELSE  ;* PATH DOES NOT EXIST, TRY TO CREATE
+   IF OSPATH(REPORT_FILE_PATH,OS$MKPATH) THEN
+      NULL
+   END ELSE
+      MY_STATUS = 1
+      CALL !ERRTEXT(TEXT, STATUS())
+      LOGMSG "NxtReport: Fail to Create Report File Path: " : REPORT_FILE_PATH : " - ":TEXT
+      GOTO MAIN.999
+   END
+END
+*
+* Open Report File Path
+*
+FULL_REPORT_FILE_NAME = REPORT_FILE_PATH:@DS:REPORT_FILE_NAME
+OPENSEQ FULL_REPORT_FILE_NAME OVERWRITE TO REPORT_FILE_VAR THEN
+   NULL
+END ELSE
+   IF STATUS() = 0 Then
+      CREATE REPORT_FILE_VAR THEN
+         Null
+      END ELSE
+         MY_STATUS = 1
+         CALL !ERRTEXT(TEXT, STATUS())
+         LOGMSG "NxtReport: Fail to Create Report File: " : FULL_REPORT_FILE_NAME : " - ":TEXT
+         GOTO MAIN.999
+      End
+   END ELSE
+      MY_STATUS = 1
+      CALL !ERRTEXT(TEXT, STATUS())
+      LOGMSG "NxtReport: Fail to Open Report File: " :FULL_REPORT_FILE_NAME : " - ":TEXT
+      GOTO MAIN.999
+   End
+END
+*
+* WRITE THE PREAMBEL
+*
+$IFDEF USEJSON
+WRITESEQ '{' TO REPORT_FILE_VAR ELSE MY_STATUS = STATUS()
+WRITESEQ '"FileName":"':FORMAT_FILE_NAME:'",' TO REPORT_FILE_VAR ELSE MY_STATUS = STATUS()
+WRITESEQ '"CellData": [' TO REPORT_FILE_VAR ELSE MY_STATUS = STATUS()
+$ELSE
+WRITESEQ '<?xml version="1.0"?>' TO REPORT_FILE_VAR ELSE MY_STATUS = STATUS()
+WRITESEQ '<REPORT>' TO REPORT_FILE_VAR ELSE MY_STATUS = STATUS()
+WRITESEQ '<File filename="':FORMAT_FILE_NAME:'">' TO REPORT_FILE_VAR ELSE MY_STATUS = STATUS()
+$ENDIF
+*
+IF MY_STATUS THEN
+   CALL !ERRTEXT(TEXT, MY_STATUS)
+   MY_STATUS = 1
+   LOGMSG "NxtReport: Fail Write to: " :FULL_REPORT_FILE_NAME : " - ":TEXT
+   GOTO MAIN.999
+END
+* Parse Def_File and create the report  file
+GOSUB PARSE_DEF_FILE
+*
+IF MY_STATUS = 0 THEN  ;* RETURNED FROM REPORT BUILD SUCCESSFULLY ?
+$IFDEF USEJSON
+   WRITESEQ ']' TO REPORT_FILE_VAR ELSE MY_STATUS = STATUS()
+   WRITESEQ '}' TO REPORT_FILE_VAR ELSE MY_STATUS = STATUS()
+$ELSE
+   WRITESEQ '</File>' TO REPORT_FILE_VAR ELSE MY_STATUS = STATUS()
+   WRITESEQ '</REPORT>' TO REPORT_FILE_VAR ELSE MY_STATUS = STATUS()
+$ENDIF
+   IF MY_STATUS THEN
+      CALL !ERRTEXT(TEXT, MY_STATUS)
+      MY_STATUS = 1
+      LOGMSG "NxtReport: Fail Write to: " :FULL_REPORT_FILE_NAME : " - ":TEXT
+      GOTO MAIN.999
+   END
+END
+*
+* MUST CLOSE REPORT_FILE BEFORE EXECUTING NxtReportGen, otherwise file will be unavailable to it.
+*
+CLOSESEQ REPORT_FILE_VAR
+
+*
+* Excute NxtGenReport
+*
+IF MY_STATUS = 0 THEN  ;* REPORT DATA WRITTEN SUCCESFULLY?
+   *
+   * YEP, EXECUTE NXTREPORTGEN
+   CMD_LINE = NXTRUNCOMMAND: ' ' : NXTREPORTGEN :' -f ':FULL_REPORT_FILE_NAME : ' -s ':SS_TYPE
+   *
+   * DEBUG??
+   IF OCONV(OPTIONS<2>,'MCU') = 'DEBUG' THEN
+      CMD_LINE := ' -d'
+   END
+   * show xml parsing??
+   IF OCONV(OPTIONS<3>,'MCU') = 'GENDEBUG' THEN
+      CMD_LINE := ' -x'
+   END
+   *
+   * timer (rem default is 20000 or 20 seconds)
+   *
+   TIMEOPT = TRIM(OCONV(OPTIONS<4>,'MCU'))
+   IF TIMEOPT[1,6] = 'TIMEOUT' THEN
+      CMD_LINE := ' -t TIMEOPT[7,7] '
+   END
+   *
+   *   $IFDEF EDB
+   LOGMSG "NxtReport: OS.EXECUTE Command: ":CMD_LINE
+   *   $ENDIF
+   **
+   OS.EXECUTE CMD_LINE
+   OS_STAT = OS.ERROR()
+   IF STATUS() THEN
+      CALL !ERRTEXT(TEXT, STATUS())
+      MY_STATUS = 1
+      LOGMSG "NxtReport: NxtReportGen execution failed: ":TEXT
+   END ELSE
+      IF OS_STAT > 0 THEN  ;* NxtReportGen is reporting an error
+         MY_STATUS = 1
+      END
+      LOGMSG "NxtReport: NxtReportGen Return Status : ": OS_STAT
+   END
+END
+*
+MAIN.999: *
+CLOSE DEF_FILE_VAR
+CLOSESEQ REPORT_FILE_VAR
+
+LOGMSG "NxtReport: Finished: ":DEF_FILE_PATH:" ":DEF_FILE_NAME:" ":REPORT_FILE_PATH:" ":REPORT_FILE_NAME:" ":REPLACE_STRING:" ":OPTIONS<1>:'/':OPTIONS<2>:'/':OPTIONS<3>:' ':MY_STATUS
+
+RETURN
+*---------------------------------------------------
+PARSE_DEF_FILE: *
+* SUBROUTINE PROCESS REPORT DEFINITION .dat FILE
+* DEF_FILE_REC - VARIABLE CONTAINING PREVIOUSLY READ REPORT DEFINITION RECORD
+*
+* SETUP SOME VARIABLES
+DEF_REC_LN = 1  ;* LINE NUMBER (FIELD) OF REPORT DEFINITION RECORD BEING PROCESSED
+LOC_ROW = 0     ;* LOCATION OF SPREADSHEET CELL ROW  TO BE CREATED / SAVED IN .XML DATA
+QUERY_START_ROW = 0   ;* where the first query row will be (if any)
+QUERY_FMT_ROW = 0     ;* not sure we need to track Query_Start_Row, Query_FMT_Row row may be all we need!
+LAST_QUERY_ROW = 0    ;* LAST ROW WRITTEN TO DURING QUERY
+MY_STATUS = 0         ;* FAILURE STATUS FLAG
+*
+DEF_REC_LN_COUNT = DCOUNT(DEF_FILE_REC,@FM)
+*
+LOOP
+WHILE (DEF_REC_LN LT DEF_REC_LN_COUNT) AND  (MY_STATUS = 0)
+   *
+   *
+   DEF_REC_LN += 1
+   *
+$IFDEF EDB
+   LOGMSG "NxtReport: Processing ":DEF_FILE_NAME:" Ln ":DEF_REC_LN:" : ":DEF_FILE_REC<DEF_REC_LN>
+$ENDIF
+   *
+   *  Parse Record, remember CSV style fields: Format Cell Address, Data Type, Data or Query String
+   DPARSE.CSV DEF_FILE_REC<DEF_REC_LN>, ",", FMT_CELL_ADDR, DATA_TYPE, DATA_OR_QUERY
+   *
+   * BREAK OFF ROW NUMBER FROM FORMAT CELL ADDRESS (IE A1 TO 1)
+   *
+   CELL_ADDR = FMT_CELL_ADDR
+   GOSUB CELL_ADDRESS_TO_ROW_COL
+   *   RETURNS CELL_ROW_NBR / CELL_COL_LTR
+   IF CELL_ROW_NBR = 0 THEN
+      LOGMSG "NxtReport: Invalid Format Cell Address @ Ln: " :DEF_REC_LN : " - ":FMT_CELL_ADDR
+      CONTINUE
+   END ELSE
+      FMT_CELL_ROW = CELL_ROW_NBR
+      FMT_CELL_COL = CELL_COL_LTR
+   END
+
+
+   *
+   *
+   *CALL CALC_LOC_ROW  ;* DETERMINE LOC_ROW
+   * RETURNS:
+   * LOC_ROW - ROW NUMBER FOR THIS CELL IN TO BE CREATED SS
+   * ON ENTRY
+   * FMT_CELL_ROW - ROW NUMBER OF CELL (IN FORMAT FILE xxxx.ODS)  CONTAINING FORMAT INFORMATION FOR CELL TO BE CREATED
+   * QUERY_FMT_ROW - ROW NUMBER OF CELL CONTAINING QUEURY INFORMATION (IN FORMAT FILE xxxx.ODS)
+   IF QUERY_FMT_ROW = 0 AND FMT_CELL_ROW >=  LOC_ROW THEN  ;* NO QUERY AS OF YET
+      LOC_ROW = FMT_CELL_ROW
+   END ELSE  ;* WE HAVE HAD A QUERY OPERATION, MUST CALCULATE NEXT LOC_ROW
+      *****      ROWS_ADDED_FROM_QUERY = LOC_ROW - QUERY_START_ROW   ;* NOT SURE WE NEED THIS?
+      OFFSET_FROM_QUERY_FMT_TO_CURRENT_FMT_ROW = FMT_CELL_ROW - QUERY_FMT_ROW
+      LOC_ROW = LAST_QUERY_ROW + OFFSET_FROM_QUERY_FMT_TO_CURRENT_FMT_ROW
+   END
+   *
+   * PARSE DATA TYPE
+   *
+   BEGIN CASE
+      CASE  DATA_TYPE = "T"
+         *  TEXT DATA TYPE, SIMPLY WRITE OUT TEXT
+         GOSUB WRITECELL(FMT_CELL_ROW,FMT_CELL_COL,LOC_ROW,DATA_OR_QUERY,FULL_REPORT_FILE_NAME,REPORT_FILE_VAR,MY_STATUS)
+
+      CASE DATA_TYPE = "I"
+         NULL   ;* TO BE CODED SEE MyWorksheet.WriteImage(row, col, filename, offsetX, offsetY, scaleX, scaleY);
+
+      CASE DATA_TYPE = "Q"
+         * LOOK FOR FUNCTIONS
+         BEGIN CASE
+            CASE INDEX(DATA_OR_QUERY,"MVQUERY",1)    ;* IS THIS A QUERY?
+               GOSUB PROCESS_QMQUERY
+               *
+            CASE INDEX(DATA_OR_QUERY,"MVLOOKUP",1)    ;* IS THIS A LOOKUP?
+               GOSUB PROCESS_QMLOOKUP
+               *
+            CASE INDEX(DATA_OR_QUERY,"MVREPLACE",1)   ;* IS THIS A REPLACE?
+               GOSUB PROCESS_QMREPLACE
+               *
+            CASE INDEX(DATA_OR_QUERY,"MVREPORT",1)    ;* IS THIS A MVREPORT?
+               * THIS SHOULD NOT OCCUR, MVREPORT STATEMENTS SHOULD HAVE BEEN CONSUMED BY QMQUERY PROCESSING
+               LOGMSG "NxtReport: Found MVREPORT Not Paired with MVQUERY  @ Ln: " :DEF_REC_LN
+               CONTINUE
+               *
+            CASE 1
+               LOGMSG "NxtReport: Unknown Query Type  @ Ln: " :DEF_REC_LN : "-": DATA_OR_QUERY
+               CONTINUE
+         END CASE
+
+      CASE 1
+         LOGMSG "NxtReport: Unknown Data Type  @ Ln: " :DEF_REC_LN : "-": DATA_TYPE:" ":DATA_OR_QUERY
+         CONTINUE
+   END CASE
+   *
+   *Loop
+REPEAT
+*
+RETURN
+
+*
+*----------------------------------------------
+PROCESS_QMQUERY: *
+*
+* PROCESS THE QMQUERY REQUEST
+QUERY_START_ROW = LOC_ROW     ;* SAVE STARTING LOCATION (ROW) WHERE FIRST QUERY DATA WILL BE PLACED
+QUERY_FMT_ROW = FMT_CELL_ROW  ;* AND SAVE FORMAT LOCATION (ROW)
+*Parse qmQuery Statement setting:
+*File_Name - QM File Name to generate report from  ie CUSTOMERS
+*Sort_By     - Sort Criteria    ie by cm.name
+*Qualifiers  - Selection Clause  ie with cm.status='ACTIVE'
+*Data_Fields<> - Field Names to report as defined in the QM File Dictionary ie  cm.name, cm.address, cm.phone
+* ASSUME THE FOLLOWING FORMAT:
+*QMQUERY("CUSTOMERS","BY CM.NAME","WITH CM.STATUS=''ACTIVE''","CM.NAME CM.ADDRESS CM.PHONE")
+* FIRST GET THE PARAMETER STRING
+PARM_STR = TRIM(FIELD(DATA_OR_QUERY,"(",2))
+PARM_STR = PARM_STR[1,LEN(PARM_STR)-1]
+
+DPARSE.CSV PARM_STR, ",", FILE_NAME, SORT_BY, QUALIFIERS, DATA_FIELD_STR
+DATA_FIELD_STR = TRIM(DATA_FIELD_STR,' ',"B")
+
+$IFDEF EDB
+LOGMSG "NxtReport: MVQUERY FILE_NAME: "  :FILE_NAME
+LOGMSG "NxtReport: MVQUERY SORT_BY:   "  :SORT_BY
+LOGMSG "NxtReport: MVQUERY QUALIFIERS: " :QUALIFIERS
+LOGMSG "NxtReport: MVQUERY DATA_FIELD_STR:[" :DATA_FIELD_STR:']'
+$ENDIF
+*
+
+*
+* DATA_FIELD_STR CONTAINS THE DICTIONARY NAMES OF THE DATA TO REPORT, BREAK'EM OUT
+DICT_NAMES = ''
+FLD_COUNT = DCOUNT(DATA_FIELD_STR," ")
+FOR FC = 1 TO FLD_COUNT
+   DICT_NAMES<FC>  = FIELD(DATA_FIELD_STR," ",FC)
+$IFDEF EDB
+   LOGMSG "NxtReport: Adding Dict: "  :DICT_NAMES<FC>
+$ENDIF
+NEXT FC
+*//
+*// Test the next x (Count(Data_Fields)-1) records to ensure we have mvReports for all of the Data_Fields found in the mvQuery statement
+*//
+$IFDEF EDB
+LOGMSG "NxtReport: Total Dicts: "  :FLD_COUNT
+$ENDIF
+*
+FOR FC = 2 TO FLD_COUNT
+   *
+   *PROCESS NEXT RECORD / LINE FIELD OF REPORT DEFINITION LOOKING FOR MVREPORT FUNCTIONS
+   DEF_REC_LN += 1
+   *  Parse Record, remember CSV style fields: Format Cell Address, Data Type, Data or Query String
+   DPARSE.CSV DEF_FILE_REC<DEF_REC_LN>, ",", NEXT_FMT_CELL_ADDR, DATA_TYPE, DATA_OR_QUERY
+   IF INDEX(DATA_OR_QUERY,"MVREPORT",1) THEN
+      * SAVE COLUMN LOCATION FOR DATA
+      CELL_ADDR = NEXT_FMT_CELL_ADDR
+      GOSUB CELL_ADDRESS_TO_ROW_COL
+      *   RETURNS CELL_ROW_NBR / CELL_COL_LTR
+      IF CELL_COL_LTR = "" THEN
+         LOGMSG "NxtReport: Invalid Format Cell Address @ Ln: " :DEF_REC_LN : " - ":NEXT_FMT_CELL_ADDR
+         MY_STATUS = 1
+         EXIT
+      END ELSE
+         *         FMT_CELL_ROW  = CELL_ROW_NBR   NOTE - FMT_CELL_ROW SHOULD NOT CHANGE DURING QUERY!
+         FMT_CELL_COL<-1>  = CELL_COL_LTR
+      END
+
+
+   END ELSE
+      MY_STATUS = 1
+      LOGMSG "NxtReport: Missing MVREPORT / MVQUERY PairinG @ Ln: " :DEF_REC_LN : "-": DATA_OR_QUERY : " Abort Report"
+      EXIT
+   END
+
+NEXT FC
+*
+* DOES THE FILE TO QUERY EXISTS?
+*
+OPEN  FILE_NAME TO FILE_VAR THEN
+   NULL
+END ELSE
+   *
+   MY_STATUS = 1
+   LOGMSG "NxtReport: File ": FILE_NAME: " Not Found,  Abort Report"
+   CLOSE FILE_VAR
+   GOTO PQ.999  ;* EXIT ON ERROR
+END
+*
+*
+**
+* NOW PROCESS QUERY REQUEST BASED ON PROGRAM SETTINGS:
+* USECVS DEFINED - USE QM INTERNAL QUERY PROCESSOR WRITTING OUTPUT TO CSV FILE, READ THIS FILE AND CREATE SS XML/JSON REPORT DATA FILE
+* OTHERWISE WE USE THE QUERY PROCESSOR TO CREATE A SELECT LIST OF IDS, AND PROCESS EACH RECORD.  THIS HAS ALL SORTS OF SHORTCOMINGS
+*
+$IFDEF USECVS
+GOSUB BUILD_REPORT_CVS
+$ELSE
+GOSUB BUILD_REPORT
+$ENDIF
+PQ.999:
+RETURN
+*----------------------------------------------
+BUILD_REPORT_CVS:
+*
+* PROCESS QUERY USING QM INTERNAL QUERY PROCESSOR WRITTING OUTPUT TO CSV FILE, READ THIS FILE AND CREATE SS XML/JSON REPORT DATA FILE
+*
+* FILE_NAME - QM FILE TO PERFORM QUERY ON
+* SORT_BY - FIELDS (DICTIONARY NAMES) TO ORDER BY (SORT)
+* QUALIFIERS - SELECTION CLAUSE FOR DATA QUERY
+* DICT_NAMES - DYN ARRAY OF FIELD (DICTIONARY NAMES) TO ADD TO REPORT
+* FMT_CELL_ROW - DYN ARRAY OF FORMAT CELL ROW ADDRESS
+* FMT_CELL_COL - DYN ARRAY OF FORMAT CELL COL ADDRESS (THESE TWO CORRESPOND TO DICT_NAMES)
+SLIST =  "SORT ":FILE_NAME
+IF SORT_BY # '' THEN
+   SLIST :=  " ":SORT_BY
+END
+IF  QUALIFIERS # '' THEN
+   SLIST := " ":QUALIFIERS
+END
+*
+SLIST := " ":DATA_FIELD_STR
+*
+HOLD_FILE_NAME = @USERNO:'_NXTREPORT'
+SLIST := " ID.SUP HDR.SUP COL.SUP COUNT.SUP CSV TO " :DEF_FILE_PATH:@DS:HOLD_FILE_NAME:" NO.QUERY "
+*
+$IFDEF EDB
+LOGMSG "NxtReport: Query for @ Ln: " :DEF_REC_LN : "-": SLIST
+$ENDIF
+EXECUTE SLIST CAPTURING DMMY.OUT
+$IFDEF EDB
+LOGMSG "NxtReport: Query Results: ":DMMY.OUT<1>
+$ENDIF
+*
+OPENSEQ DEF_FILE_PATH:@DS:HOLD_FILE_NAME TO FVAR ELSE
+   CALL !ERRTEXT(TEXT, STATUS())
+   MY_STATUS = 1
+   LOGMSG "NxtReport:  Could Not Open ": DEF_FILE_PATH:@DS:HOLD_FILE_NAME : " File, ":  STATUS() : ' ' : TEXT :",  Abort Report"
+   GOTO BRC.999
+END
+*
+* LOOP TO PROCESS EACH LINE OF GENERATED DATA
+*
+LOOP
+   READSEQ DATALN FROM FVAR THEN
+$IFDEF EDB
+      LOGMSG "NxtReport:  CSV Query LINE: ":DATALN
+$ENDIF
+      GOSUB PROCESS_CSV_LN
+
+   END ELSE
+      EXIT
+   END
+REPEAT
+CLOSESEQ FVAR
+* DELETE THE HOLD FILE
+$IFNDEF EDB
+DELETESEQ DEF_FILE_PATH:@DS:HOLD_FILE_NAME ELSE
+ CALL !ERRTEXT(ETEXT, STATUS())
+ LOGMSG "NxtReport: UNABLE TO DELETE $HOLD ENTRY: ":HOLD_FILE_NAME: " Status():" :STATUS():' ':ETEXT
+END
+$ENDIF
+
+BRC.999: *
+LAST_QUERY_ROW = LOC_ROW - 1
+RETURN
+*----------------------------------------------
+PROCESS_CSV_LN:
+*
+* BREAK CSV DATA INTO INDIVIDUAL FIELDS
+*
+DATAFIELDS = CSVDQ(DATALN)
+FIELD_CT = DCOUNT(DATAFIELDS,@FM)
+$IFDEF EDB
+LOGMSG "NxtReport:  CSV Query Field Count: ":FIELD_CT
+$ENDIF
+FOR FI = 1 TO FIELD_CT
+   CELL_DATA = DATAFIELDS<FI>
+   IF CELL_DATA # '' THEN
+      GOSUB WRITECELL(FMT_CELL_ROW,FMT_CELL_COL<FI>,LOC_ROW,CELL_DATA,FULL_REPORT_FILE_NAME,REPORT_FILE_VAR,WR_STATUS)
+   END
+NEXT FI
+LOC_ROW += 1  ;* NEXT SS ROW
+RETURN
+*----------------------------------------------
+BUILD_REPORT:
+
+*
+* QMQuery request will most likely result in multiple rows being added to the SS.
+* We also have to deal with fields that are multivalue (both value and sub value).
+* Multivalue fields that have (matching) Assiciations will be written 1 field value relationship per line repeating the non multivalue data*
+*    * we may want to provide an option to not repeat data.
+* Multivalue fields with different Association will be written on their own row(s).
+* Multivalue fields with no Association will be concatenated together and written on a single row?
+* NOTE THE ABOVE HAS YET TO BE IMPLEMENTED FOR NOW WE  JUST CONCATENATE MULTIVALUES INTO A SINGLE SS CELL.
+*
+*
+*//                Routine preforms query and creates associated xml entries
+* FILE_NAME - QM FILE TO PERFORM QUERY ON
+* SORT_BY - FIELDS (DICTIONARY NAMES) TO ORDER BY (SORT)
+* QUALIFIERS - SELECTION CLAUSE FOR DATA QUERY
+* DICT_NAMES - DYN ARRAY OF FIELD (DICTIONARY NAMES) TO ADD TO REPORT
+* FMT_CELL_ROW - DYN ARRAY OF FORMAT CELL ROW ADDRESS
+* FMT_CELL_COL - DYN ARRAY OF FORMAT CELL COL ADDRESS (THESE TWO CORRESPOND TO DICT_NAMES)
+*
+DICT_FILE_VAR = '' ;* FILE VARIABLE FOR DICTIONARY FILE
+FILE_VAR      = '' ;* FILE VARIABLE FOR DATA PORTION OF FILE
+*
+* DATA FIELDS DEFINED?
+*
+DICTIONARY_COUNT = DCOUNT(DICT_NAMES,@FM)
+IF DICTIONARY_COUNT = 0 THEN
+   MY_STATUS = 1
+   LOGMSG "NxtReport: No Data Fields Defined in Query @ Ln: " :DEF_REC_LN : "-": DATA_OR_QUERY : " Abort Report"
+   GOTO BR.999  ;* EXIT ON ERROR
+END ELSE
+   *SIZE ARRAYS
+   DIM DICTIONARY_DATA_ARRAY(DICTIONARY_COUNT)
+END
+*
+SLIST =  "SSELECT ":FILE_NAME
+IF SORT_BY # '' THEN
+   SLIST :=  " ":SORT_BY
+END
+IF  QUALIFIERS # '' THEN
+   SLIST := " ":QUALIFIERS
+END
+*
+SLIST := "  TO 2"
+*
+$IFDEF EDB
+LOGMSG "NxtReport: Query for @ Ln: " :DEF_REC_LN : "-": SLIST
+$ENDIF
+*
+EXECUTE SLIST CAPTURING DMMY.OUT
+$IFDEF EDB
+LOGMSG "NxtReport: Query Results: ":DMMY.OUT<1>
+$ENDIF
+**
+IF @SELECTED GE 1 THEN
+   READLIST ID_LIST FROM 2 THEN
+      ID_COUNT = DCOUNT(ID_LIST,@AM)
+   END
+END ELSE
+   ID_COUNT = 0
+   ID_LIST = ""
+END
+*
+* If there are records from query, get dictionary items for file
+*
+IF ID_COUNT > 0 THEN
+   * Get Dictionaries
+   OPEN "DICT", FILE_NAME TO DICT_FILE_VAR THEN
+      FOR DC = 1 TO DICTIONARY_COUNT
+         READ DICTIONARY_DATA_ARRAY(DC) FROM DICT_FILE_VAR, DICT_NAMES<DC> THEN
+            NULL
+         END ELSE
+            MY_STATUS = 1
+            LOGMSG "NxtReport: Dictionary Item ":DICT_NAMES<DC>:" for ": FILE_NAME: " Not Found @ Ln: " :DEF_REC_LN : "-": DATA_OR_QUERY : " Abort Report"
+            GOTO BR.999  ;* EXIT ON ERROR
+         END
+      NEXT DC
+      *
+   END ELSE
+      MY_STATUS = 1
+      LOGMSG "NxtReport: Dictionary for ": FILE_NAME: " Not Found @ Ln: " :DEF_REC_LN : "-": DATA_OR_QUERY : " Abort Report"
+      GOTO BR.999  ;* EXIT ON ERROR
+   END
+END ELSE
+   * NO ITEMS TO REPORT
+
+$IFDEF EDB
+   LOGMSG "NxtReport: No Records found for Query @ Ln: " :DEF_REC_LN : "-": SLIST
+$ENDIF
+
+   GOTO BR.999
+END
+*
+* Now create the JSON entrys for this query
+*
+FOR E = 1 TO ID_COUNT
+   REC_ID = ID_LIST<E>
+   READ DATA_REC FROM FILE_VAR, REC_ID THEN
+      FOR DC = 1 TO DICTIONARY_COUNT
+         *  get data based on type of dictionary item
+         BEGIN CASE
+            CASE DICTIONARY_DATA_ARRAY(DC)<1> = "D"
+               *  D Type just pull and format, usless it points to field 0!
+               FLD_PTR = DICTIONARY_DATA_ARRAY(DC)<2>
+               IF FLD_PTR = 0 THEN  ;* USE ID !
+                  CELL_DATA = REC_ID
+               END ELSE
+                  CELL_DATA = DATA_REC<FLD_PTR>
+               END
+               *
+               * DOES THIS FIELD HAVE VALUES?
+               VALUECT =  DCOUNT(CELL_DATA,@VM)
+$IFDEF EDB
+               LOGMSG "NxtReport: Multi Value Count: ":VALUECT
+$ENDIF
+               *
+               * GET THE FORMAT FOR THIS FIELD
+               FMT_CODE = DICTIONARY_DATA_ARRAY(DC)<3>
+
+               TEMP_DATA = CELL_DATA
+               CELL_DATA = ''
+
+               FOR VCT = 1 TO VALUECT
+                  IF FMT_CODE # '' THEN
+                     CELL_DATA = CELL_DATA :' ': OCONV(TEMP_DATA<1,VCT>,FMT_CODE)
+                  END ELSE
+                     CELL_DATA = CELL_DATA :' ': TEMP_DATA<1,VCT>
+                  END
+               NEXT VCT
+               CELL_DATA = TRIM(CELL_DATA,' ',"B")
+
+               GOSUB WRITECELL(FMT_CELL_ROW,FMT_CELL_COL<DC>,LOC_ROW,CELL_DATA,FULL_REPORT_FILE_NAME,REPORT_FILE_VAR,WR_STATUS)
+
+            CASE DICTIONARY_DATA_ARRAY(DC)<1> = "I" OR DICTIONARY_DATA_ARRAY(DC)<1> = "C"
+               * I OR C TYPES NEED SYSTEMS HELP TO GET ACTUAL DATA
+               ID = REC_ID
+               @RECORD = DATA_REC
+               CELL_DATA = ITYPE(DICTIONARY_DATA_ARRAY(DC))
+               GOSUB WRITECELL(FMT_CELL_ROW,FMT_CELL_COL<DC>,LOC_ROW,CELL_DATA,FULL_REPORT_FILE_NAME,REPORT_FILE_VAR,WR_STATUS)
+            CASE 1
+               *   DICTIONARY TYPE THAT WE CURRENTLY DO NOT HANDLE, REPORT
+               CELL_DATA = DICT_NAMES<DC>: ' Dict Type Not Currently Handled'
+               GOSUB WRITECELL(FMT_CELL_ROW,FMT_CELL_COL<DC>,LOC_ROW,CELL_DATA,FULL_REPORT_FILE_NAME,REPORT_FILE_VAR,WR_STATUS)
+         END CASE
+      NEXT DC
+      *
+   END ELSE
+      CELL_DATA = "Record: ":REC_ID: " Not Found In File: ":FILE_NAME
+      GOSUB WRITECELL(FMT_CELL_ROW,FMT_CELL_COL<DC>,LOC_ROW,CELL_DATA,FULL_REPORT_FILE_NAME,REPORT_FILE_VAR,WR_STATUS)
+   END
+   *
+   LOC_ROW += 1  ;* NEXT SS ROW
+   *
+NEXT E
+*
+BR.999: *
+LAST_QUERY_ROW = LOC_ROW - 1
+CLOSE DICT_FILE_VAR
+
+RETURN
+*-----------------------------------------------------------------------------------------
+PROCESS_QMLOOKUP: *
+*=mvLOOKUP("filename","record","field#-or-dictionary name")
+* FIRST GET THE PARAMETER STRING
+PARM_STR = TRIM(FIELD(DATA_OR_QUERY,"(",2))
+PARM_STR = PARM_STR[1,LEN(PARM_STR)-1]
+
+DPARSE.CSV PARM_STR, ",", FILE_NAME, RECORD_ID, FLD_OR_DICT
+$IFDEF EDB
+LOGMSG "NxtReport: MVLOOKUP FILE_NAME: "  :FILE_NAME
+LOGMSG "NxtReport: MVLOOKUP RECORD_ID:  "  :RECORD_ID
+LOGMSG "NxtReport: MVLOOKUP FLD_OR_DICT: " :FLD_OR_DICT
+$ENDIF
+
+DICT_FILE_VAR = '' ;* FILE VARIABLE FOR DICTIONARY FILE
+FILE_VAR      = '' ;* FILE VARIABLE FOR DATA PORTION OF FILE
+*
+* FILE EXISTS?
+*
+OPEN  FILE_NAME TO FILE_VAR THEN
+   *
+   * GET THE RECORD
+   *
+   READ REC_DATA FROM FILE_VAR, RECORD_ID THEN
+      *
+      * DICTIONARY OR FIELD NUMBER GIVEN?
+      *
+      IF NUM(FLD_OR_DICT) THEN
+
+         *  FIELD NUMBER, PULL IT OFF
+         *
+         FLD_OR_DICT = ABS(INT(FLD_OR_DICT))
+         CELL_DATA = REC_DATA<FLD_OR_DICT,1,1>
+         GOSUB WRITECELL(FMT_CELL_ROW,FMT_CELL_COL<1>,LOC_ROW,CELL_DATA,FULL_REPORT_FILE_NAME,REPORT_FILE_VAR,WR_STATUS)
+      END ELSE
+         * DICTIONARY
+         OPEN "DICT", FILE_NAME TO DICT_FILE_VAR THEN
+
+            READ DICTIONARY_DATA FROM DICT_FILE_VAR, FLD_OR_DICT THEN
+               BEGIN CASE
+                  CASE DICTIONARY_DATA<1> = "D"
+                     *  D Type just pull and format, usless it points to field 0!
+                     FLD_PTR = DICTIONARY_DATA<2>
+                     IF FLD_PTR = 0 THEN  ;* USE ID !
+                        CELL_DATA = RECORD_ID
+                     END ELSE
+                        CELL_DATA = REC_DATA<FLD_PTR>
+                     END
+                     * IS THERE A FORMAT ?
+                     FMT_CODE = DICTIONARY_DATA<3>
+                     IF FMT_CODE # '' THEN
+                        CELL_DATA = OCONV(CELL_DATA,FMT_CODE)
+                     END
+                     GOSUB WRITECELL(FMT_CELL_ROW,FMT_CELL_COL<1>,LOC_ROW,CELL_DATA,FULL_REPORT_FILE_NAME,REPORT_FILE_VAR,WR_STATUS)
+
+                  CASE DICTIONARY_DATA<1> = "I" OR DICTIONARY_DATA<1> = "C"
+                     * I OR C TYPES NEED SYSTEMS HELP TO GET ACTUAL DATA
+                     ID = REC_ID
+                     @RECORD = DATA_REC
+                     CELL_DATA = ITYPE(DICTIONARY_DATA)
+                     GOSUB WRITECELL(FMT_CELL_ROW,FMT_CELL_COL<1>,LOC_ROW,CELL_DATA,FULL_REPORT_FILE_NAME,REPORT_FILE_VAR,WR_STATUS)
+                  CASE 1
+                     *   DICTIONARY TYPE THAT WE CURRENTLY DO NOT HANDLE, REPORT
+                     CELL_DATA = FLD_OR_DICT: ' Dict Type Not Currently Handled'
+                     GOSUB WRITECELL(FMT_CELL_ROW,FMT_CELL_COL<1>,LOC_ROW,CELL_DATA,FULL_REPORT_FILE_NAME,REPORT_FILE_VAR,WR_STATUS)
+               END CASE
+            END ELSE
+               CELL_DATA = "Dictionary Item ":FLD_OR_DICT:" for ": FILE_NAME: " Not Found"
+               GOSUB WRITECELL(FMT_CELL_ROW,FMT_CELL_COL<1>,LOC_ROW,CELL_DATA,FULL_REPORT_FILE_NAME,REPORT_FILE_VAR,WR_STATUS)
+            END
+
+            *
+         END ELSE
+            MY_STATUS = 1
+            LOGMSG "NxtReport: Dictionary for ": FILE_NAME: " Not Found @ Ln: " :DEF_REC_LN : "-": DATA_OR_QUERY : " Abort Report"
+            GOTO LOOKUP.999  ;* EXIT ON ERROR
+         END
+
+      END
+
+   END ELSE
+      CELL_DATA = "Record: ":RECORD_ID: " Not Found In File: ":FILE_NAME
+      GOSUB WRITECELL(FMT_CELL_ROW,FMT_CELL_COL<1>,LOC_ROW,CELL_DATA,FULL_REPORT_FILE_NAME,REPORT_FILE_VAR,WR_STATUS)
+   END
+   *
+END ELSE
+   *
+   MY_STATUS = 1
+   LOGMSG "NxtReport: File ": FILE_NAME: " Not Found,  Abort Report"
+   GOTO LOOKUP.999  ;* EXIT ON ERROR
+END
+
+
+LOOKUP.999:
+CLOSE FILE_VAR
+RETURN
+*-----------------------------------------------------------
+PROCESS_QMREPLACE:
+*=mvREPLACE("TOKEN")
+* FIRST GET THE PARAMETER STRING
+PARM_STR = TRIM(FIELD(DATA_OR_QUERY,"(",2))
+PARM_STR = PARM_STR[1,LEN(PARM_STR)-1]
+
+DPARSE.CSV PARM_STR, ",", TOKEN, TOKENDESC
+TOKEN = TRIM(TOKEN,'"','A')
+TOKEN = OCONV(TOKEN, 'MCU')
+$IFDEF EDB
+LOGMSG "NxtReport: MVREPLACE TOKEN: "  :TOKEN
+$ENDIF
+
+CELL_DATA = CLIENT.DATA{TOKEN}
+IF CELL_DATA = '' THEN
+   CELL_DATA = TOKEN:' not found'
+END
+GOSUB WRITECELL(FMT_CELL_ROW,FMT_CELL_COL<1>,LOC_ROW,CELL_DATA,FULL_REPORT_FILE_NAME,REPORT_FILE_VAR,WR_STATUS)
+RETURN
+*-----------------------------------------------------------
+CELL_ADDRESS_TO_ROW_COL: *
+* CONVERTS CELL ADDRESS IE "A1" TO ROW NUMBER AND  COLUMN LETTER
+*   PASSED  CELL_ADDR IE "A1"
+*   RETURNS CELL_ROW_NBR / CELL_COL_LTR
+*                      1              A
+CELL_ROW_NBR = 0
+CELL_COL_LTR = ""
+FMT_ROW = ''
+CONVERT "$" TO "" IN CELL_ADDR
+*
+FOR C = 1 TO LEN(CELL_ADDR)
+   *      CRT "CELL_ADDR[":C:",1]: ":CELL_ADDR[C,1]
+   IF NUM(CELL_ADDR[C,1]) THEN
+      FMT_ROW =CELL_ADDR[C,*]
+      *      CRT "FMT_ROW:":FMT_ROW
+      EXIT
+   END ELSE
+      CELL_COL_LTR := CELL_ADDR[C,1]
+      *      CRT "CELL_COL_LTR:":CELL_COL_LTR
+   END
+NEXT C
+*
+* DID WE END UP WITH A ROW?
+*
+IF LEN(FMT_ROW) > 0 THEN
+   CELL_ROW_NBR = FMT_ROW + 0
+END
+RETURN
+*--------------------------------------------------------------
+*
+* DEFINE SOME LOCAL SUBROUTINES
+*
+LOCAL SUBROUTINE WRITECELL(F_ROW,F_COL,L_ROW,CELL_DATA,FILE_NAME,FILE_VAR,WR_STATUS)
+*
+* CLEAN CELL_DATA of special characters that will screw xml parsing up
+*  Just five: &lt; (<), &amp; (&), &gt; (>), &quot; ("), and &apos; (')
+*
+CELL_DATA = TRIM(CELL_DATA)
+IF CELL_DATA # '' THEN
+
+$IFDEF USEJSON
+   MYC = COLLECTION()
+
+   MYC{'fmt'} = F_COL:F_ROW
+   MYC{'loc'} = F_COL:L_ROW
+   MYC{'val'} = CELL_DATA
+   CELL_LINE = JBUILD(MYC)
+$ELSE
+
+   CELL_DATA = CHANGE(CELL_DATA,'<','&lt;')
+   CELL_DATA = CHANGE(CELL_DATA,'&','&amp;')
+   CELL_DATA = CHANGE(CELL_DATA,'>','&gt;')
+   CELL_DATA = CHANGE(CELL_DATA,'"','&quot;')
+   CELL_DATA = CHANGE(CELL_DATA,"'",'&apos;')
+   **
+   CELL_LINE = '<CEL fmt="':F_COL:F_ROW:'" '
+   CELL_LINE := 'loc="':F_COL:L_ROW:'">'
+   CELL_LINE :=  CELL_DATA
+   CELL_LINE := '</CEL>'
+$ENDIF
+   *
+   WR_STATUS = 0
+   *
+$IFDEF EDB
+   LOGMSG "NxtReport: cell Data: " :CELL_LINE
+$ENDIF
+   *
+   WRITESEQ CELL_LINE TO FILE_VAR ELSE WR_STATUS = STATUS()
+   IF WR_STATUS THEN
+      CALL !ERRTEXT(TEXT, MY_STATUS)
+      WR_STATUS = 1
+      LOGMSG "NxtReport: Fail Write to: " :FILE_NAME : " - ":TEXT
+   END
+END
+RETURN
+END
+*----------------------------------------------------------------
+END

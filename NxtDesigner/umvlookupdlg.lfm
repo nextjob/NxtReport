@@ -1,0 +1,79 @@
+object mvlookupdlg: Tmvlookupdlg
+  Left = 3016
+  Height = 180
+  Top = 150
+  Width = 330
+  Caption = 'MVLookup Dialog'
+  ClientHeight = 180
+  ClientWidth = 330
+  OnClose = FormClose
+  OnShow = FormShow
+  LCLVersion = '2.0.10.0'
+  object FileNameEdt: TEdit
+    Left = 112
+    Height = 23
+    Top = 16
+    Width = 160
+    OnClick = FileNameEdtClick
+    TabOrder = 0
+  end
+  object Label1: TLabel
+    Left = 16
+    Height = 15
+    Top = 16
+    Width = 53
+    Caption = 'File Name'
+    ParentColor = False
+  end
+  object Label2: TLabel
+    Left = 16
+    Height = 15
+    Top = 56
+    Width = 72
+    Caption = 'Record Name'
+    ParentColor = False
+  end
+  object RecordIdEdt: TEdit
+    Left = 112
+    Height = 23
+    Top = 56
+    Width = 160
+    TabOrder = 1
+  end
+  object Label3: TLabel
+    Left = 16
+    Height = 15
+    Top = 104
+    Width = 125
+    Caption = 'Field / Dictionary Name'
+    ParentColor = False
+  end
+  object FieldDictEdt: TEdit
+    Left = 152
+    Height = 23
+    Top = 104
+    Width = 120
+    OnClick = FieldDictEdtClick
+    TabOrder = 2
+  end
+  object OkBtn: TButton
+    Left = 240
+    Height = 25
+    Top = 136
+    Width = 75
+    Caption = 'OK'
+    ModalResult = 1
+    OnClick = OkBtnClick
+    TabOrder = 3
+  end
+  object CancelBtn: TButton
+    Left = 24
+    Height = 25
+    Top = 136
+    Width = 75
+    Caption = 'Cancel'
+    ModalResult = 2
+    OnClick = CancelBtnClick
+    TabOrder = 4
+  end
+end

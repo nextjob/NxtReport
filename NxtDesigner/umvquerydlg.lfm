@@ -1,0 +1,214 @@
+object MVQueryDlg: TMVQueryDlg
+  Left = 3022
+  Height = 369
+  Top = 172
+  Width = 479
+  Caption = 'MVQuery Dialog'
+  ClientHeight = 369
+  ClientWidth = 479
+  OnClose = FormClose
+  OnShow = FormShow
+  LCLVersion = '2.0.10.0'
+  object Label1: TLabel
+    Left = 16
+    Height = 15
+    Top = 16
+    Width = 53
+    Caption = 'File Name'
+    ParentColor = False
+  end
+  object FileNameEdt: TEdit
+    Left = 112
+    Height = 23
+    Top = 16
+    Width = 136
+    OnClick = FileNameEdtClick
+    TabOrder = 0
+  end
+  object Label2: TLabel
+    Left = 16
+    Height = 15
+    Top = 72
+    Width = 88
+    Caption = 'Sort By Clause(s)'
+    ParentColor = False
+  end
+  object SortByEdt: TEdit
+    Left = 232
+    Height = 23
+    Top = 72
+    Width = 208
+    OnClick = SortByEdtClick
+    TabOrder = 2
+  end
+  object Label3: TLabel
+    Left = 16
+    Height = 15
+    Top = 104
+    Width = 61
+    Caption = 'Selection(s)'
+    ParentColor = False
+  end
+  object SelectFieldEdt1: TEdit
+    Left = 112
+    Height = 23
+    Top = 128
+    Width = 112
+    OnClick = SelectFieldEdt1Click
+    TabOrder = 4
+  end
+  object Label4: TLabel
+    Left = 20
+    Height = 15
+    Top = 232
+    Width = 71
+    Caption = 'Display Fields'
+    ParentColor = False
+  end
+  object OkBtn: TButton
+    Left = 357
+    Height = 25
+    Top = 328
+    Width = 75
+    Caption = 'OK'
+    ModalResult = 1
+    OnClick = OkBtnClick
+    TabOrder = 12
+  end
+  object CancelBtn: TButton
+    Left = 16
+    Height = 25
+    Top = 328
+    Width = 75
+    Caption = 'Cancel'
+    ModalResult = 2
+    OnClick = CancelBtnClick
+    TabOrder = 13
+  end
+  object SortByCB: TComboBox
+    Left = 112
+    Height = 23
+    Top = 72
+    Width = 112
+    ItemHeight = 15
+    ItemIndex = 0
+    Items.Strings = (
+      'BY'
+      'BY.DSND'
+      'BY.EXP'
+      'BY.EXP.DSND'
+    )
+    TabOrder = 1
+    Text = 'BY'
+  end
+  object withCB1: TComboBox
+    Left = 248
+    Height = 23
+    Top = 128
+    Width = 80
+    ItemHeight = 15
+    ItemIndex = 0
+    Items.Strings = (
+      'EQ'
+      'NE'
+      'LT'
+      'LE'
+      'GT'
+      'GE'
+      'LIKE'
+      'UNLIKE'
+      'BETWEEN'
+    )
+    TabOrder = 5
+    Text = 'EQ'
+  end
+  object SelectValueEdt1: TEdit
+    Left = 352
+    Height = 23
+    Top = 128
+    Width = 112
+    TabOrder = 6
+  end
+  object StaticText1: TStaticText
+    Left = 56
+    Height = 17
+    Top = 128
+    Width = 33
+    Caption = 'WITH'
+    TabOrder = 3
+  end
+  object withCB2: TComboBox
+    Left = 248
+    Height = 23
+    Top = 192
+    Width = 80
+    ItemHeight = 15
+    ItemIndex = 0
+    Items.Strings = (
+      'EQ'
+      'NE'
+      'LT'
+      'LE'
+      'GT'
+      'GE'
+      'LIKE'
+      'UNLIKE'
+      'BETWEEN'
+    )
+    TabOrder = 10
+    Text = 'EQ'
+  end
+  object AndOrCB: TComboBox
+    Left = 52
+    Height = 23
+    Top = 160
+    Width = 52
+    ItemHeight = 15
+    ItemIndex = 0
+    Items.Strings = (
+      'AND'
+      'OR'
+    )
+    TabOrder = 7
+    Text = 'AND'
+  end
+  object StaticText2: TStaticText
+    Left = 56
+    Height = 17
+    Top = 192
+    Width = 33
+    Caption = 'WITH'
+    TabOrder = 8
+  end
+  object SelectFieldEdt2: TEdit
+    Left = 112
+    Height = 23
+    Top = 192
+    Width = 112
+    OnClick = SelectFieldEdt2Click
+    TabOrder = 9
+  end
+  object SelectValueEdt2: TEdit
+    Left = 352
+    Height = 23
+    Top = 192
+    Width = 112
+    TabOrder = 11
+  end
+  object FieldsMemo: TMemo
+    Left = 112
+    Height = 90
+    Top = 232
+    Width = 160
+    TabOrder = 14
+  end
+  object btnAddField: TButton
+    Left = 280
+    Height = 25
+    Top = 232
+    Width = 75
+    Caption = 'Add Field'
+    OnClick = btnAddFieldClick
+    TabOrder = 15
+  end
+end
