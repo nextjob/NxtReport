@@ -52,7 +52,7 @@ We need to use QMCallx beacuse:
 interface
 
 uses
-  Classes, SysUtils, LResources, Forms, Controls, Graphics, Dialogs, strutils,
+  Classes, SysUtils, LResources, Forms, Controls, Graphics, Dialogs, strutils, lclintf,
   StdCtrls, Menus, ExtCtrls, ActnList, Spin, Buttons, ComCtrls, Grids, typinfo,
   fpspreadsheetgrid, fpspreadsheetctrls, fpstypes, fpsutils, fpsexprparser, fpspreadsheet,
   fpsReaderWriter, fpsActions, fpscsv, fpsopendocument, fpsallformats, fpsNumFormat, tisQMClient;
@@ -91,7 +91,7 @@ type
     MnuOpen: TMenuItem;
     MnuSave: TMenuItem;
     MnuTestReport: TMenuItem;
-    MenuItem19: TMenuItem;
+    MnuAbout: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem4: TMenuItem;
@@ -175,6 +175,7 @@ type
     procedure ColorComboboxAddColors(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCreate(Sender: TObject);
+    procedure MnuAboutClick(Sender: TObject);
     procedure MnuOpenClick(Sender: TObject);
     procedure MnuSaveClick(Sender: TObject);
     procedure MnuTestReportClick(Sender: TObject);
@@ -807,6 +808,19 @@ begin
   MainForm.Caption := 'NxtDesigner Ver: ' + VerInfo;
   TestData := ''; // Init Test Data String, used for testing report
   prtsettingMode := constPageSu;
+end;
+
+procedure TMainForm.MnuAboutClick(Sender: TObject);
+var
+  urlstr : string;
+begin
+
+ // fire off the help html
+  urlstr := ExtractFilePath(ParamStr(0)) + 'Doc'+ PathDelim + 'NxtReport.html' ;
+  if fileExists(urlstr) then
+     OpenDocument(urlstr)
+  else
+    MessageDlg('Cannot Find Help Files: ' + urlstr, mtError, [mbOK], 0);
 end;
 
 procedure TMainForm.MnuNewClick(Sender: TObject);

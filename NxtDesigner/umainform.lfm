@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 2522
+  Left = 2523
   Height = 701
-  Top = 216
+  Top = 153
   Width = 869
   Caption = 'NxtDesigner'
   ClientHeight = 681
@@ -2195,8 +2195,9 @@ object MainForm: TMainForm
       Caption = 'Test Report'
       OnClick = MnuTestReportClick
     end
-    object MenuItem19: TMenuItem
+    object MnuAbout: TMenuItem
       Caption = 'About'
+      OnClick = MnuAboutClick
     end
   end
 end

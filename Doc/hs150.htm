@@ -1,0 +1,35 @@
+<HTML><HEAD>
+	
+	<TITLE>Replace</TITLE>
+	<META NAME="VIEWPORT" CONTENT="width=device-width">
+	<META NAME="AUTHOR" CONTENT="">
+	<META NAME="GENERATOR" CONTENT="HelpScribble 8.3.0">
+	<STYLE> span { display: inline-block; }</STYLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#0000FF" VLINK="#800080" ALINK="#FF0000">
+<P><FONT FACE="Arial, helvetica, sans-serif" SIZE="2">
+<A HREF="NxtReport.html">Contents</A>
+ - <A HREF="idx.htm">Index</A>
+</FONT><HR></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" COLOR="#0000FF" SIZE="5"><B>Replace</B></FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">The MVReplace function defines a tag that will be replace with data provided&nbsp; by the QM program calling for the report creation.&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">Select the Cell that will contain the data, then select MVLookUp from the function (F(x)) drop down list.</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">There are two predefined tags:</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">RUNDATE</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">RUNTIME</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">At report creation the QM subroutine NxtReport will replace these tags with the current system date and time.</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">For Custom tags, the QM Program calling NxtReport will need to supply a JSON variable containg the associated Tag Name Tag Value.</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">ie:&nbsp;</FONT><FONT FACE="Arial, helvetica, sans-serif" SIZE="2"> {"%%MYTAG1%%":"MYTAG1Value", "%%MYTAG2%%":"MYTAG2Value"}&nbsp; </FONT><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">see </FONT><FONT FACE="Arial, helvetica, sans-serif" SIZE="3"><A HREF="hs600.htm">QMBasic Sub NxtReport</A></FONT><FONT FACE="Arial, helvetica, sans-serif" SIZE="2">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" COLOR="#800000" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" COLOR="#800000" SIZE="3"><IMG SRC="NxtDReplace.PNG" BORDER="0"></FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" COLOR="#800000" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" COLOR="#800000" SIZE="3"><IMG SRC="NxtDReplaceF.PNG" BORDER="0">
+</FONT>
+</P>
+</BODY></HTML>

@@ -284,7 +284,6 @@ begin
   Memo1.Lines.Add('NxtReportGen Complete: ' + DateTimeToStr(Now));
   // always write the log
   Memo1.Lines.SaveToFile(LogFile);
-
   application.Terminate;
 end;
 

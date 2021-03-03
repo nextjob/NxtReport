@@ -36,6 +36,8 @@ begin
     MyProcess.Executable := executable;
     for i := 2 to paramCount() do
        MyProcess.Parameters.Add(ParamStr(i));
+    MyProcess.InheritHandles := False;
+    MyProcess.Options := [];
 // Note to hide the cmd window of this process -- see use of -wg compile option above
 //    MyProcess.Options := MyProcess.Options + [poNoConsole];
 //    MyProcess.StartupOptions := MyProcess.StartupOptions + [suoUseShowWindow];

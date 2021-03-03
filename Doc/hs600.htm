@@ -1,0 +1,60 @@
+<HTML><HEAD>
+	
+	<TITLE>QMBasic Sub NxtReport</TITLE>
+	<META NAME="VIEWPORT" CONTENT="width=device-width">
+	<META NAME="AUTHOR" CONTENT="">
+	<META NAME="GENERATOR" CONTENT="HelpScribble 8.3.0">
+	<STYLE> span { display: inline-block; }</STYLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#0000FF" VLINK="#800080" ALINK="#FF0000">
+<P><FONT FACE="Arial, helvetica, sans-serif" SIZE="2">
+<A HREF="NxtReport.html">Contents</A>
+ - <A HREF="idx.htm">Index</A>
+</FONT><HR></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" COLOR="#0000FF" SIZE="5"><B>QMBasic Sub NxtReport</B></FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">NxtReport is the QMBasic subroutine program that is used to initiate the creation of&nbsp; report.</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">The source can be found in NxtReportQM_BP.</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">SUBROUTINE NXTREPORT(DEF_FILE_PATH, DEF_FILE_NAME, REPORT_FILE_PATH, REPORT_FILE_NAME, REPLACE_STRING, OPTIONS, MY_STATUS)</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">Def_File_Path &amp; Name&nbsp;&nbsp;&nbsp; -&nbsp;&nbsp; File Path and Name of report definition record</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">Report_File_Path &amp; Name - File Path and Name of&nbsp; report .JSON file to produce (file created by this routine)</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">Replace_String&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&nbsp; String of Valid JSON Name / Value pairs which will be used to replace the Name value found in the report with the associated value.</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - ie)&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><SPAN STYLE="width: 72pt"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3"> &nbsp;</FONT></SPAN><SPAN STYLE="width: 72pt"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">  </FONT></SPAN><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">{"%%CustName%%" : "Joe Blow's Hardware", "%%CustAddrStreet1%% : "101 Avenue" , "%%CustAddrStreet2%% : "Suite 10". "%%City%%" : "Plainville"}&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; and so on</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Where %%CustName%% is found in the report definition, "Joe Blow's Hardware is output.</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">Options&lt;1&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - spreadsheet type, choice of:</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><SPAN STYLE="width: 72pt"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3"> &nbsp;</FONT></SPAN><SPAN STYLE="width: 72pt"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3"> &nbsp;</FONT></SPAN><SPAN STYLE="width: 72pt"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3"> &nbsp;</FONT></SPAN><SPAN STYLE="width: 72pt"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3"> &nbsp;</FONT></SPAN><FONT FACE="Arial, helvetica, sans-serif" SIZE="3"> xlsx - Excel XML spreadsheet</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xls&nbsp; - Excel 97-2003 spreadsheets</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ods&nbsp; - LibreOffice/OpenOffice spreadsheet</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">Options&lt;2&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Debug - run NxtReportGen in debug mode</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">Options&lt;3&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - GenDebug&nbsp;&nbsp; - Log JSON parsing in NxtReportGen</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">Options&lt;4&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - timeout - timer for NxtReportGen number of (seconds * 1000) for report generation to complete</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">Status&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Returned Status (0) - ok, Report .xml file created (Non Zero - Error)</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="3">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="2">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="2">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="2">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="2">DEF_FILE_PATH = 'C:\QMACCOUNTS\nxtReportDefs'</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="2">DEF_FILE_NAME = "mynewreport.dat"</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="2">REPORT_FILE_PATH = "C:\QMACCOUNTS\Reports"</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="2">REPORT_FILE_NAME = "MyTestReport.xml"</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="2">REPLACE_ARRAY = ' {"%%RUNTIME%%":"RUNTIMEValue"} '</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="2">OPTIONS = ''</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="2">OPTIONS&lt;1&gt; = 'XLSX'</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="2">OPTIONS&lt;2&gt; = 'DEBUG'</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="2">MY_STATUS = 0</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="2">&nbsp;</FONT></P>
+<P STYLE="margin-top:0;margin-bottom:0;"><FONT FACE="Arial, helvetica, sans-serif" SIZE="2">CALL NXTREPORT(DEF_FILE_PATH,DEF_FILE_NAME,REPORT_FILE_PATH,REPORT_FILE_NAME,REPLACE_ARRAY, OPTIONS, MY_STATUS)
+</FONT>
+</P>
+</BODY></HTML>
