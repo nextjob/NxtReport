@@ -6,7 +6,7 @@ uses
   Interfaces, // this includes the LCL widgetset
   Forms, umainform, LResources, laz_fpspreadsheet_visual, utestreport,
   uprtsettings, umvquerydlg, uqmsettings, uDictSelect, umvreplacedlg,
-  umvlookupdlg, LazSerialPort;
+  umvlookupdlg;
 
 {$R *.res}
 

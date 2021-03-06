@@ -26,16 +26,13 @@
         <Mode0 Name="default"/>
       </Modes>
     </RunParams>
-    <RequiredPackages Count="3">
+    <RequiredPackages Count="2">
       <Item1>
-        <PackageName Value="LazSerialPort"/>
+        <PackageName Value="laz_fpspreadsheet_visual"/>
       </Item1>
       <Item2>
-        <PackageName Value="laz_fpspreadsheet_visual"/>
-      </Item2>
-      <Item3>
         <PackageName Value="LCL"/>
-      </Item3>
+      </Item2>
     </RequiredPackages>
     <Units Count="11">
       <Unit0>
